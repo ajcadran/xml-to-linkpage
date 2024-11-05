@@ -1,17 +1,16 @@
 const fs = require('fs');
 const path = require('path');
-const MarkdownIt = require('markdown-it');
-const md = new MarkdownIt();
+const xml2js = require('xml2js');
 
-const inputDir = './markdown'; // Directory with Markdown files
-const outputDir = './site';    // Directory for generated HTML files
+const inputDir = './xml';   // Directory with XML files
+const outputDir = './site'; // Directory for generated HTML files
 
 // Ensure the output directory exists
 if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir);
 }
 
-// Read all Markdown files in the input directory
+// Read all XML files in the input directory
 fs.readdir(inputDir, (err, files) => {
     if (err) {
         console.error('Error reading input directory:', err);
@@ -19,72 +18,65 @@ fs.readdir(inputDir, (err, files) => {
     }
 
     files.forEach(file => {
-        if (path.extname(file) === '.md') {
+        if (path.extname(file) === '.xml') {
             const filePath = path.join(inputDir, file);
-            fs.readFile(filePath, 'utf8', (err, markdownData) => {
+            fs.readFile(filePath, 'utf8', (err, data) => {
                 if (err) {
                     console.error('Error reading file:', file, err);
                     return;
                 }
 
-                // Process the Markdown content
-                const outputHtml = processMarkdown(markdownData);
-
-                // Write the output HTML to a file
-                const outputFileName = path.basename(file, '.md') + '.html';
-                const outputPath = path.join(outputDir, outputFileName);
-                fs.writeFile(outputPath, outputHtml, err => {
+                // Parse the XML content
+                const parser = new xml2js.Parser();
+                parser.parseString(data, (err, result) => {
                     if (err) {
-                        console.error('Error writing output file:', outputPath, err);
-                    } else {
-                        console.log('Generated:', outputPath);
+                        console.error('Error parsing XML:', file, err);
+                        return;
                     }
+
+                    // Process the parsed XML
+                    const outputHtml = processXml(result);
+
+                    // Write the output HTML to a file
+                    const outputFileName = path.basename(file, '.xml') + '.html';
+                    const outputPath = path.join(outputDir, outputFileName);
+                    fs.writeFile(outputPath, outputHtml, err => {
+                        if (err) {
+                            console.error('Error writing output file:', outputPath, err);
+                        } else {
+                            console.log('Generated:', outputPath);
+                        }
+                    });
                 });
             });
         }
     });
 });
 
-// Function to process Markdown content
-function processMarkdown(markdownContent) {
-    // Parse the Markdown content into tokens
-    const tokens = md.parse(markdownContent, {});
+// Function to process parsed XML content
+function processXml(xmlData) {
+    // Assuming the XML structure is as per the example
+    // Extract title, handle, and links
 
-    let h1Content = '';
-    let buttonsHtml = '';
+    const page = xmlData.page;
+    const title = page.title ? page.title[0] : '';
+    const handle = page.handle ? page.handle[0] : '';
+    const links = page.links && page.links[0].link ? page.links[0].link : [];
 
-    for (let i = 0; i < tokens.length; i++) {
-        const token = tokens[i];
+    let linksHtml = '';
 
-        if (token.type === 'heading_open') {
-            const headingLevel = token.tag; // 'h1', 'h2', etc.
-
-            if (headingLevel === 'h1') {
-                // The next token contains the content
-                const contentToken = tokens[i + 1];
-                if (contentToken.type === 'inline') {
-                    h1Content = contentToken.content;
-                }
-                i++; // Skip the content token
-            } else if (headingLevel === 'h2') {
-                // The next token contains the content
-                const contentToken = tokens[i + 1];
-                if (contentToken.type === 'inline') {
-                    // Process the h2 content to extract text and URL
-                    const buttonHtml = processH2Content(contentToken.content);
-                    buttonsHtml += buttonHtml;
-                }
-                i++; // Skip the content token
-            }
-        }
-    }
+    links.forEach(link => {
+        const text = link.text ? link.text[0] : '';
+        const url = link.url ? link.url[0] : '';
+        linksHtml += `<a href="${url}">${text}</a>\n`;
+    });
 
     // Generate the final HTML
-    const html = `
+    return `
 <!DOCTYPE html>
 <html>
 <head>
-    <title>${h1Content}</title>
+    <title>${title}</title>
     <style>
         body { font-family: Arial, sans-serif; }
         .buttons { display: flex; flex-direction: column; max-width: 200px; }
@@ -101,28 +93,11 @@ function processMarkdown(markdownContent) {
     </style>
 </head>
 <body>
-    <h1>${h1Content}</h1>
+    <h1>${handle}</h1>
     <div class="buttons">
-        ${buttonsHtml}
+        ${linksHtml}
     </div>
 </body>
 </html>
 `;
-
-    return html;
-}
-
-// Function to process h2 content and return button HTML
-function processH2Content(content) {
-    // Match the pattern (Text)[URL]
-    const regex = /^\((.+)\)\[(.+)\]$/;
-    const match = content.match(regex);
-    if (match) {
-        const text = match[1];
-        const url = match[2];
-        return `<a href="${url}">${text}</a>\n`;
-    } else {
-        // Return the content as plain text if it doesn't match the pattern
-        return `<p>${content}</p>\n`;
-    }
 }

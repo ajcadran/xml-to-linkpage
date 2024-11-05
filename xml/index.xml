@@ -1,0 +1,14 @@
+<page>
+    <title>Title Bar</title>
+    <handle>Handle</handle>
+    <links>
+        <link>
+            <text>Google</text>
+            <url>https://google.com</url>
+        </link>
+        <link>
+            <text>Youtube</text>
+            <url>https://Youtube.com</url>
+        </link>
+    </links>
+</page>
