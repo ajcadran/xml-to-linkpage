@@ -63,13 +63,8 @@ function processXml(xmlData) {
     const handle = page.handle ? page.handle[0] : '';
     const links = page.links && page.links[0].link ? page.links[0].link : [];
 
-    let linksHtml = '';
-
-    links.forEach(link => {
-        const text = link.text ? link.text[0] : '';
-        const url = link.url ? link.url[0] : '';
-        linksHtml += `<a href="${url}">${text}</a>\n`;
-    });
+    let linksHtml = processLinkHtml(links);
+    let linksJs = processLinkJs(links);
 
     // Generate the final HTML
     return `
@@ -77,27 +72,240 @@ function processXml(xmlData) {
 <html>
 <head>
     <title>${title}</title>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        .buttons { display: flex; flex-direction: column; max-width: 200px; }
-        .buttons a {
-            margin: 5px 0;
-            padding: 10px;
-            background-color: #008CBA;
-            color: white;
-            text-align: center;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .buttons a:hover { background-color: #005f6a; }
-    </style>
+    <style>${defaultCss}</style>
+    <script type="module" defer>${linksJs}</script>
 </head>
 <body>
-    <h1>${handle}</h1>
-    <div class="buttons">
+    <span id="snackbar">
+        <img type="image/png" src="./img/ico/clipboard.png" height="20px" />
+        Copied to Clipboard
+    </span>
+    <div id="header">
+        <img type="image/png" src="./img/logo.png" height="100vh" alt="The logo for Mellow Paw Studios." />
+        <div>@${handle}</div>
+    </div>
+    <div id="link-container" class="prevent-select">
         ${linksHtml}
     </div>
 </body>
 </html>
 `;
 }
+
+function processLinkHtml(links) {
+    let linksHtml = '';
+
+    links.forEach(link => {
+        const text = link.text ? link.text[0] : '';
+        linksHtml += `
+        <div id="navto-${text.toLowerCase().replace(/\s+/, "")}" class="link-btn">
+            ${text}
+            <div id="copy-${text.toLowerCase().replace(/\s+/, "")}" class="copy-btn">
+                <img type="image/png" src="./img/ico/copy.png" width="16px" />
+            </div>
+        </div>`;
+    });
+
+    return linksHtml;
+}
+
+function processLinkJs(links) {
+    let linksJs = `
+function showSnackBar() {
+    var sb = document.getElementById("snackbar");
+    sb.className = "show";
+    setTimeout(()=>{ sb.className = sb.className.replace("show", ""); }, 3000);
+}
+
+function copyToClipboard(event, url) {
+    event.stopPropagation();
+    if (event.button === 0) {
+        navigator.clipboard.writeText(url).then(() => {
+            showSnackBar();
+        }).catch((err) => {
+            console.error("Failed to copy text: ", err);
+        });
+    }
+}
+
+function navigateTo(event, url) {
+    if (event.button === 0) {
+        window.location.href = url;
+    } else if (event.button === 1) {
+        window.open(url, '_blank');
+    }
+}`;
+
+    links.forEach(link => {
+        const text = link.text ? link.text[0] : '';
+        const url = link.url ? link.url[0] : '';
+        linksJs += `
+        document.getElementById('navto-${text.toLowerCase().replace(/\s+/, "")}').addEventListener('mouseup', (event) => navigateTo(event, "${url}"));
+        document.getElementById('copy-${text.toLowerCase().replace(/\s+/, "")}').addEventListener('mouseup', (event) => copyToClipboard(event, "${url}"));\n`;
+    });
+
+    return linksJs;
+}
+
+const defaultCss = `
+/* Vars */
+:root {
+    --font-size-small: 1.3em;
+    --font-size-large: 2em;
+
+    --spacing-xs: 4px;
+    --spacing-small: 12px;
+    --spacing-medium: 16px;
+    --spacing-large: 24px;
+    --spacing-xl: 10vh;
+
+    --font-family-primary: Inter, sans-serif;
+
+    --theme-background-main: #faddf2;
+    /* --theme-background-link-container: #f4aed185; */
+    --theme-background-link-btn: #f4aed1;
+    --theme-copy-btn-hover: #ffffff3b;
+}
+
+/* General */
+html {
+    background-color: var(--theme-background-main);
+}
+
+a {
+    text-decoration: none;
+    color: black;
+}
+
+#header {
+    text-align: center;
+    width: 35%;
+    margin: auto;
+    margin-top: 10vh;
+    font-family: var(--font-family-primary);
+    font-size: var(--font-size-large);
+}
+
+/* Utilities */
+.prevent-select {
+    -webkit-user-select: none;
+    /* Safari */
+    -ms-user-select: none;
+    /* IE 10 and IE 11 */
+    user-select: none;
+    /* Standard syntax */
+}
+
+/* Links */
+#link-container {
+    width: 35%;
+    margin: auto;
+    margin-top: 1vh;
+    padding: var(--spacing-large);
+    border-radius: 24px;
+    background-color: var(--theme-background-link-container);
+}
+
+.link-btn {
+    justify-items: center;
+    cursor: pointer;
+    margin-top: var(--spacing-medium);
+    padding: var(--spacing-medium);
+    text-align: center;
+    font-weight: 400;
+    font-family: var(--font-family-primary);
+    font-size: var(--font-size-small);
+    background-color: var(--theme-background-link-btn);
+    border-radius: 8px;
+    box-shadow: 0 0 10px #00000036;
+    transition: 0.3s;
+}
+
+.link-btn:hover {
+    box-shadow: 0 0 14px #0000006c;
+    scale: 1.01;
+}
+
+.copy-btn {
+    float: right;
+}
+
+.copy-btn img {
+    padding: var(--spacing-xs);
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+.copy-btn img:hover {
+    background-color: var(--theme-copy-btn-hover);
+}
+
+/* Snackbar */
+#snackbar {
+    position: fixed;
+    top: 30px;
+    left: 50%;
+    min-width: 250px;
+    margin-left: -125px;
+    padding: 16px;
+    text-align: center;
+    font-family: var(--font-family-primary);
+    border-radius: 2px;
+    background-color: var(--theme-background-link-btn);
+    z-index: 1;
+    visibility: hidden;
+}
+
+#snackbar.show {
+    visibility: visible;
+    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@-webkit-keyframes fadein {
+    from {
+        top: 0;
+        opacity: 0;
+    }
+
+    to {
+        top: 30px;
+        opacity: 1;
+    }
+}
+
+@keyframes fadein {
+    from {
+        top: 0;
+        opacity: 0;
+    }
+
+    to {
+        top: 30px;
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes fadeout {
+    from {
+        top: 30px;
+        opacity: 1;
+    }
+
+    to {
+        top: 0;
+        opacity: 0;
+    }
+}
+
+@keyframes fadeout {
+    from {
+        top: 30px;
+        opacity: 1;
+    }
+
+    to {
+        top: 0;
+        opacity: 0;
+    }
+}`;
