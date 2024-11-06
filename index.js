@@ -6,7 +6,7 @@ const _xml2js = require('xml2js');
 
 let _inputDir = '.';   // Directory with XML files
 let _outputDir = './site'; // Directory for generated HTML files
-const _libDir = _path.join(__dirname, 'lib');
+const _libDir = _path.join(__dirname, 'lib'); // Directory with lib files
 
 const _helpText = `Usage:
     node-name                         Run with default settings in the current directory.
@@ -46,7 +46,7 @@ function readFiles() {
     if (!fs.existsSync(_outputDir)) {
         fs.mkdirSync(_outputDir);
     }
-    
+
     // Read all XML files in the input directory
     fs.readdir(_inputDir, (err, files) => {
         if (err) {
@@ -84,7 +84,8 @@ function readFiles() {
                                 console.log('Generated:', outputPath);
                             }
                         });
-
+                        
+                        // Copy the default icons
                         copyImageFiles();
                     });
                 });
@@ -196,7 +197,7 @@ function copyImageFiles() {
     }
 
     // List of image files to copy
-    const imageFiles = ['clipboard.png', 'copy.png']; // Replace with your actual file names
+    const imageFiles = ['clipboard.png', 'copy.png'];
 
     imageFiles.forEach(fileName => {
         const sourcePath = _path.join(_libDir, fileName);
