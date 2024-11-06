@@ -1,14 +1,29 @@
+#!/usr/bin/env node
+
 const fs = require('fs');
 const path = require('path');
 const xml2js = require('xml2js');
 
-const inputDir = './xml';   // Directory with XML files
-const outputDir = './site'; // Directory for generated HTML files
+let inputDir = './xml';   // Directory with XML files
+let outputDir = './site'; // Directory for generated HTML files
+const libDir = path.join(__dirname, 'lib');
+
+// Parse command-line arguments
+const args = process.argv.slice(2);
+args.forEach((arg, index) => {
+    if (arg === '--input' || arg === '-i') {
+        inputDir = args[index + 1];
+    } else if (arg === '--output' || arg === '-o') {
+        outputDir = args[index + 1];
+    }
+});
 
 // Ensure the output directory exists
 if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir);
 }
+
+console.log(inputDir);
 
 // Read all XML files in the input directory
 fs.readdir(inputDir, (err, files) => {
@@ -47,6 +62,8 @@ fs.readdir(inputDir, (err, files) => {
                             console.log('Generated:', outputPath);
                         }
                     });
+
+                    copyImageFiles();
                 });
             });
         }
@@ -73,15 +90,16 @@ function processXml(xmlData) {
 <head>
     <title>${title}</title>
     <style>${defaultCss}</style>
+    <link rel="icon" type="image/x-icon" href="./img/favicon.png">
     <script type="module" defer>${linksJs}</script>
 </head>
 <body>
     <span id="snackbar">
-        <img type="image/png" src="./img/ico/clipboard.png" height="20px" />
+        <img type="image/png" src="./img/clipboard.png" height="20px" />
         Copied to Clipboard
     </span>
     <div id="header">
-        <img type="image/png" src="./img/logo.png" height="100vh" alt="The logo for Mellow Paw Studios." />
+        <img type="image/png" src="./img/logo.png" height="100vh" alt="The logo for ${title}." />
         <div>@${handle}</div>
     </div>
     <div id="link-container" class="prevent-select">
@@ -101,7 +119,7 @@ function processLinkHtml(links) {
         <div id="navto-${text.toLowerCase().replace(/\s+/, "")}" class="link-btn">
             ${text}
             <div id="copy-${text.toLowerCase().replace(/\s+/, "")}" class="copy-btn">
-                <img type="image/png" src="./img/ico/copy.png" width="16px" />
+                <img type="image/png" src="./img/copy.png" width="16px" />
             </div>
         </div>`;
     });
@@ -147,6 +165,30 @@ function navigateTo(event, url) {
     return linksJs;
 }
 
+// Copy dependent icons
+function copyImageFiles() {
+    // Ensure the output directory exists
+    if (!fs.existsSync(outputDir + "/img")) {
+        fs.mkdirSync(outputDir + "/img");
+    }
+
+    // List of image files to copy
+    const imageFiles = ['clipboard.png', 'copy.png']; // Replace with your actual file names
+
+    imageFiles.forEach(fileName => {
+        const sourcePath = path.join(libDir, fileName);
+        const destPath = path.join(outputDir + '/img', fileName);
+
+        fs.copyFile(sourcePath, destPath, err => {
+            if (err) {
+                console.error(`Error copying ${fileName}:`, err);
+            } else {
+                console.log(`Copied ${fileName} to ${destPath}`);
+            }
+        });
+    });
+}
+
 const defaultCss = `
 /* Vars */
 :root {
@@ -162,7 +204,6 @@ const defaultCss = `
     --font-family-primary: Inter, sans-serif;
 
     --theme-background-main: #faddf2;
-    /* --theme-background-link-container: #f4aed185; */
     --theme-background-link-btn: #f4aed1;
     --theme-copy-btn-hover: #ffffff3b;
 }
@@ -203,7 +244,6 @@ a {
     margin-top: 1vh;
     padding: var(--spacing-large);
     border-radius: 24px;
-    background-color: var(--theme-background-link-container);
 }
 
 .link-btn {

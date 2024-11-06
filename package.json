@@ -1,15 +1,30 @@
 {
-  "name": "landingpagefrommarkdown",
+  "name": "xml-to-linkpage",
   "version": "1.0.0",
-  "description": "",
+  "description": "Generate a linktree styled landing page from an XML file.",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "bin": {
+    "xml-to-linkpage": "./index.js"
   },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "files": [
+    "lib/",
+    "index.js"
+  ],
   "keywords": [],
-  "author": "",
+  "author": "Andrew Cadran",
   "license": "MIT",
   "dependencies": {
     "xml2js": "^0.6.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ajcadran/xml-to-linkpage.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ajcadran/xml-to-linkpage/issues"
+  },
+  "homepage": "https://github.com/ajcadran/xml-to-linkpage#readme"
 }
