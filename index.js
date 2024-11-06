@@ -4,36 +4,49 @@ const fs = require('fs');
 const _path = require('path');
 const _xml2js = require('xml2js');
 
-let _inputDir = './xml';   // Directory with XML files
+let _inputDir = '.';   // Directory with XML files
 let _outputDir = './site'; // Directory for generated HTML files
 const _libDir = _path.join(__dirname, 'lib');
+
+const _helpText = `Usage:
+    node-name                         Run with default settings in the current directory.
+    node-name -h                      Display this help message.
+    node-name <inputDir> <outputDir>  Specify input and output directories.`;
 
 init();
 
 function init() {
     processArgs();
-
-    // Ensure the output directory exists
-    if (!fs.existsSync(_outputDir)) {
-        fs.mkdirSync(_outputDir);
-    }
-
     readFiles();
 }
 
 function processArgs() {
     // Parse command-line arguments
     const args = process.argv.slice(2);
-    args.forEach((arg, index) => {
-        if (arg === '--input' || arg === '-i') {
-            _inputDir = args[index + 1];
-        } else if (arg === '--output' || arg === '-o') {
-            _outputDir = args[index + 1];
-        }
-    });
+
+    if (args.length === 0) {
+        return;
+    } else if (args[0] === '-h') {
+        console.log(_helpText);
+        process.exit();
+    } else if (args.length === 2) {
+        _inputDir = path.resolve(args[0]);
+        _outputDir = path.resolve(args[1]);
+        console.log(`Using input directory: ${_inputDir}`);
+        console.log(`Using output directory: ${_outputDir}`);
+    } else {
+        console.log('Invalid usage. Use -h for help.');
+        console.log(_helpText);
+        process.exit();
+    }
 }
 
 function readFiles() {
+    // Ensure the output directory exists
+    if (!fs.existsSync(_outputDir)) {
+        fs.mkdirSync(_outputDir);
+    }
+    
     // Read all XML files in the input directory
     fs.readdir(_inputDir, (err, files) => {
         if (err) {
@@ -99,7 +112,7 @@ function processXml(xmlData) {
 <html>
 <head>
     <title>${title}</title>
-    <style>${defaultCss}</style>
+    <style>${_defaultCss}</style>
     <link rel="icon" type="image/x-icon" href="./img/favicon.png">
     <script type="module" defer>${linksJs}</script>
 </head>
@@ -199,7 +212,7 @@ function copyImageFiles() {
     });
 }
 
-const defaultCss = `
+const _defaultCss = `
 /* Vars */
 :root {
     --font-size-small: 1.3em;
