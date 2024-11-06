@@ -1,74 +1,84 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const path = require('path');
-const xml2js = require('xml2js');
+const _path = require('path');
+const _xml2js = require('xml2js');
 
-let inputDir = './xml';   // Directory with XML files
-let outputDir = './site'; // Directory for generated HTML files
-const libDir = path.join(__dirname, 'lib');
+let _inputDir = './xml';   // Directory with XML files
+let _outputDir = './site'; // Directory for generated HTML files
+const _libDir = _path.join(__dirname, 'lib');
 
-// Parse command-line arguments
-const args = process.argv.slice(2);
-args.forEach((arg, index) => {
-    if (arg === '--input' || arg === '-i') {
-        inputDir = args[index + 1];
-    } else if (arg === '--output' || arg === '-o') {
-        outputDir = args[index + 1];
+init();
+
+function init() {
+    processArgs();
+
+    // Ensure the output directory exists
+    if (!fs.existsSync(_outputDir)) {
+        fs.mkdirSync(_outputDir);
     }
-});
 
-// Ensure the output directory exists
-if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir);
+    readFiles();
 }
 
-console.log(inputDir);
+function processArgs() {
+    // Parse command-line arguments
+    const args = process.argv.slice(2);
+    args.forEach((arg, index) => {
+        if (arg === '--input' || arg === '-i') {
+            _inputDir = args[index + 1];
+        } else if (arg === '--output' || arg === '-o') {
+            _outputDir = args[index + 1];
+        }
+    });
+}
 
-// Read all XML files in the input directory
-fs.readdir(inputDir, (err, files) => {
-    if (err) {
-        console.error('Error reading input directory:', err);
-        return;
-    }
+function readFiles() {
+    // Read all XML files in the input directory
+    fs.readdir(_inputDir, (err, files) => {
+        if (err) {
+            console.error('Error reading input directory:', err);
+            return;
+        }
 
-    files.forEach(file => {
-        if (path.extname(file) === '.xml') {
-            const filePath = path.join(inputDir, file);
-            fs.readFile(filePath, 'utf8', (err, data) => {
-                if (err) {
-                    console.error('Error reading file:', file, err);
-                    return;
-                }
-
-                // Parse the XML content
-                const parser = new xml2js.Parser();
-                parser.parseString(data, (err, result) => {
+        files.forEach(file => {
+            if (_path.extname(file) === '.xml') {
+                const filePath = _path.join(_inputDir, file);
+                fs.readFile(filePath, 'utf8', (err, data) => {
                     if (err) {
-                        console.error('Error parsing XML:', file, err);
+                        console.error('Error reading file:', file, err);
                         return;
                     }
 
-                    // Process the parsed XML
-                    const outputHtml = processXml(result);
-
-                    // Write the output HTML to a file
-                    const outputFileName = path.basename(file, '.xml') + '.html';
-                    const outputPath = path.join(outputDir, outputFileName);
-                    fs.writeFile(outputPath, outputHtml, err => {
+                    // Parse the XML content
+                    const parser = new _xml2js.Parser();
+                    parser.parseString(data, (err, result) => {
                         if (err) {
-                            console.error('Error writing output file:', outputPath, err);
-                        } else {
-                            console.log('Generated:', outputPath);
+                            console.error('Error parsing XML:', file, err);
+                            return;
                         }
-                    });
 
-                    copyImageFiles();
+                        // Process the parsed XML
+                        const outputHtml = processXml(result);
+
+                        // Write the output HTML to a file
+                        const outputFileName = _path.basename(file, '.xml') + '.html';
+                        const outputPath = _path.join(_outputDir, outputFileName);
+                        fs.writeFile(outputPath, outputHtml, err => {
+                            if (err) {
+                                console.error('Error writing output file:', outputPath, err);
+                            } else {
+                                console.log('Generated:', outputPath);
+                            }
+                        });
+
+                        copyImageFiles();
+                    });
                 });
-            });
-        }
+            }
+        });
     });
-});
+}
 
 // Function to process parsed XML content
 function processXml(xmlData) {
@@ -168,16 +178,16 @@ function navigateTo(event, url) {
 // Copy dependent icons
 function copyImageFiles() {
     // Ensure the output directory exists
-    if (!fs.existsSync(outputDir + "/img")) {
-        fs.mkdirSync(outputDir + "/img");
+    if (!fs.existsSync(_outputDir + "/img")) {
+        fs.mkdirSync(_outputDir + "/img");
     }
 
     // List of image files to copy
     const imageFiles = ['clipboard.png', 'copy.png']; // Replace with your actual file names
 
     imageFiles.forEach(fileName => {
-        const sourcePath = path.join(libDir, fileName);
-        const destPath = path.join(outputDir + '/img', fileName);
+        const sourcePath = _path.join(_libDir, fileName);
+        const destPath = _path.join(_outputDir + '/img', fileName);
 
         fs.copyFile(sourcePath, destPath, err => {
             if (err) {
