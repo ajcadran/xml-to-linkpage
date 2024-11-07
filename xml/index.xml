@@ -1,6 +1,10 @@
 <page>
     <title>Title Bar</title>
     <handle>@Handle</handle>
+    <img>
+        <var name="--background-img-main">./img/img.png</var>
+        <var name="--background-img-link-btn">./img/img.png</var>
+    </img>
     <links>
         <link>
             <text>Google</text>

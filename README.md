@@ -1,5 +1,5 @@
 
-__This node app allows the user to turn a formatted XML file into a static Linktree style webpage__
+__This app allows the user to turn a formatted XML file into a static Linktree style webpage__
 
 ## Install
 
@@ -43,7 +43,29 @@ __This node app allows the user to turn a formatted XML file into a static Linkt
 </page>
 ```
 
-## All CSS Vars
+### Background Images
+
+__Create background images by using the img tag__
+
+```xml
+<img>
+    <var name="--background-img-main">./img/packground-img-main.jpg</var>
+    <var name="--background-img-link-btn" repeat="no-repeat" size="contain">./img/packground-img-main.jpg</var>
+</img>
+```
+
+#### Options
+
+- Tag Content - Sets the `background-img` url for either background
+- repeat - Sets the `background-repeat` value for either background
+- size - Sets the `background-size` value for either background
+
+```xml
+<var name="--background-img-main" repeat="no-repeat">./img-main.png</var>
+<var name="--background-img-link-btn" size="contain">./img-link.png</var>
+```
+
+### All CSS Vars
 
 ```xml
 <var name="--font-size-small">1.3em</var>

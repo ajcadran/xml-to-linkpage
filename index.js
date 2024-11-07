@@ -71,10 +71,11 @@ function readFiles() {
                             return;
                         }
 
-                        const cssVars = processCssVars(result?.page?.styles[0].var);
+                        const [bgImgMain, bgImgLinkBtn] = processImgs(result?.page?.img?.[0]?.var);
+                        const cssVars = processCssVars(result?.page?.styles?.[0].var);
 
-                        // Process the parsed XML
-                        const outputHtml = processXml(result, cssVars);
+                        // Process the parsed finished HTML file
+                        const outputHtml = processHtml(result, cssVars, bgImgMain, bgImgLinkBtn);
 
                         // Write the output HTML to a file
                         const outputFileName = _path.basename(file, '.xml') + '.html';
@@ -88,7 +89,10 @@ function readFiles() {
                         });
                         
                         // Copy the default icons
-                        copyImageFiles();
+                        const disableDefaultIcons = result?.page?.$?.icons ?? 'true';
+                        if (disableDefaultIcons == 'true') {
+                            copyImageFiles();
+                        }
                     });
                 });
             }
@@ -96,11 +100,7 @@ function readFiles() {
     });
 }
 
-// Function to process parsed XML content
-function processXml(xmlData, cssVars) {
-    // Assuming the XML structure is as per the example
-    // Extract title, handle, and links
-
+function processHtml(xmlData, cssVars, bgImgMain, bgImgLinkBtn) {
     const page = xmlData.page;
     const title = page.title ? page.title[0] : '';
     const handle = page.handle ? page.handle[0] : '';
@@ -116,6 +116,8 @@ function processXml(xmlData, cssVars) {
 <head>
     <title>${title}</title>
     <style>
+${bgImgMain}
+${bgImgLinkBtn}
 ${cssVars}
 ${_defaultCss}
     </style>
@@ -224,6 +226,56 @@ function processCssVars(styles) {
     });
 
     return `:root {\n${Object.entries(cssVars).map(([key, value]) => `${key}: ${value};`).join('\n')}\n}`;
+}
+
+// Create fresh template for image style classes
+const imgTemplates = () => {
+    const imgMainTemplate = `
+    html {
+        background-image: url('{img}');
+        background-repeat: {repeat};
+        background-size: {size};
+    }`;
+    
+        const imgLinkBtnTemplate = `
+    .link-btn {
+        background-image: url('{img}');
+        background-repeat: {repeat};
+        background-size: {size};
+    }`;
+
+    return [imgMainTemplate, imgLinkBtnTemplate];
+}
+
+function processImgs(imgs) {
+    let bgImgMain = '';
+    let bgImgLinkBtn = '';
+
+    if (imgs == null) {
+        return [bgImgMain, bgImgLinkBtn];
+    }
+
+    imgs.forEach(img => {
+        // Get fresh templates
+        const [imgMainTemplate, imgLinkBtnTemplate] = imgTemplates();
+
+        // Strip all metadata
+        let imgName = img.$?.name;
+        let imgValue = img._;
+        let imgRepeat = img.$?.repeat ?? 'no-repeat';
+        let imgSize = img.$?.size;
+
+        // Format correct values
+        if (imgName == '--background-img-main' && imgValue != null) {
+            imgSize ??= 'cover';
+            bgImgMain = imgMainTemplate.replace('{img}', imgValue).replace('{repeat}', imgRepeat).replace('{size}', imgSize);
+        } else if (imgName == '--background-img-link-btn' && imgValue != null) {
+            imgSize ??= '100% 100%';
+            bgImgLinkBtn = imgLinkBtnTemplate.replace('{img}', imgValue).replace('{repeat}', imgRepeat).replace('{size}', imgSize);
+        }
+    });
+
+    return [bgImgMain, bgImgLinkBtn];
 }
 
 // Copy dependent icons
