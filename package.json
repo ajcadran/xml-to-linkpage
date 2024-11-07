@@ -1,6 +1,6 @@
 {
   "name": "xml-to-linkpage",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "Generate a linktree styled landing page from an XML file.",
   "main": "index.js",
   "bin": {
@@ -13,7 +13,17 @@
     "lib/",
     "index.js"
   ],
-  "keywords": [],
+  "keywords": [
+    "xml",
+    "website",
+    "generate",
+    "generator",
+    "cli",
+    "command",
+    "command-line",
+    "workflow",
+    "pipeline"
+  ],
   "author": "Andrew Cadran",
   "license": "MIT",
   "dependencies": {

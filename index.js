@@ -5,7 +5,7 @@ const _path = require('path');
 const _xml2js = require('xml2js');
 
 let _inputDir = '.';   // Directory with XML files
-let _outputDir = './site'; // Directory for generated HTML files
+let _outputDir = './build'; // Directory for generated HTML files
 const _libDir = _path.join(__dirname, 'lib'); // Directory with lib files
 
 const _helpText = `Usage:
@@ -30,8 +30,8 @@ function processArgs() {
         console.log(_helpText);
         process.exit();
     } else if (args.length === 2) {
-        _inputDir = path.resolve(args[0]);
-        _outputDir = path.resolve(args[1]);
+        _inputDir = _path.resolve(args[0]);
+        _outputDir = _path.resolve(args[1]);
         console.log(`Using input directory: ${_inputDir}`);
         console.log(`Using output directory: ${_outputDir}`);
     } else {
@@ -71,8 +71,10 @@ function readFiles() {
                             return;
                         }
 
+                        const cssVars = processCssVars(result?.page?.styles[0].var);
+
                         // Process the parsed XML
-                        const outputHtml = processXml(result);
+                        const outputHtml = processXml(result, cssVars);
 
                         // Write the output HTML to a file
                         const outputFileName = _path.basename(file, '.xml') + '.html';
@@ -95,7 +97,7 @@ function readFiles() {
 }
 
 // Function to process parsed XML content
-function processXml(xmlData) {
+function processXml(xmlData, cssVars) {
     // Assuming the XML structure is as per the example
     // Extract title, handle, and links
 
@@ -113,7 +115,10 @@ function processXml(xmlData) {
 <html>
 <head>
     <title>${title}</title>
-    <style>${_defaultCss}</style>
+    <style>
+${cssVars}
+${_defaultCss}
+    </style>
     <link rel="icon" type="image/x-icon" href="./img/favicon.png">
     <script type="module" defer>${linksJs}</script>
 </head>
@@ -189,6 +194,41 @@ function navigateTo(event, url) {
     return linksJs;
 }
 
+function processCssVars(styles) {
+    if (styles == null) {
+        return null;
+    }
+
+    let cssVars = {
+        '--font-size-small': '1.3em',
+        '--font-size-large': '2em',
+        '--spacing-xs': '4px',
+        '--spacing-small': '12px',
+        '--spacing-medium': '16px',
+        '--spacing-large': '24px',
+        '--spacing-xl': '10vh',
+        '--font-family-primary': 'Inter, sans-serif',
+        '--theme-background-main': '#faddf2',
+        '--theme-background-link-btn': '#f4aed1',
+        '--theme-copy-btn-hover': '#ffffff3b',
+        '--theme-color-main': '#000000',
+        '--theme-color-link-btn': '#000000',
+    };
+
+    styles.forEach(style => {
+        const varName = style.$?.name;
+        const varValue = style._;
+        console.log(style._);
+        if (varName != null && varValue != null) {
+            cssVars[varName] = varValue;
+        }
+    });
+
+    console.log(cssVars);
+
+    return `:root {\n${Object.entries(cssVars).map(([key, value]) => `${key}: ${value};`).join('\n')}\n}`;
+}
+
 // Copy dependent icons
 function copyImageFiles() {
     // Ensure the output directory exists
@@ -214,24 +254,6 @@ function copyImageFiles() {
 }
 
 const _defaultCss = `
-/* Vars */
-:root {
-    --font-size-small: 1.3em;
-    --font-size-large: 2em;
-
-    --spacing-xs: 4px;
-    --spacing-small: 12px;
-    --spacing-medium: 16px;
-    --spacing-large: 24px;
-    --spacing-xl: 10vh;
-
-    --font-family-primary: Inter, sans-serif;
-
-    --theme-background-main: #faddf2;
-    --theme-background-link-btn: #f4aed1;
-    --theme-copy-btn-hover: #ffffff3b;
-}
-
 /* General */
 html {
     background-color: var(--theme-background-main);
@@ -247,6 +269,7 @@ a {
     width: 35%;
     margin: auto;
     margin-top: 10vh;
+    color: var(--theme-color-main);
     font-family: var(--font-family-primary);
     font-size: var(--font-size-large);
 }
@@ -279,6 +302,7 @@ a {
     font-weight: 400;
     font-family: var(--font-family-primary);
     font-size: var(--font-size-small);
+    color: var(--theme-color-link-btn);
     background-color: var(--theme-background-link-btn);
     border-radius: 8px;
     box-shadow: 0 0 10px #00000036;

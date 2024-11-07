@@ -11,4 +11,8 @@
             <url>https://Youtube.com</url>
         </link>
     </links>
+    <styles>
+        <var name="--font-size-small">1.3em</var>
+        <var name="--font-size-large">2em</var>
+    </styles>
 </page>
