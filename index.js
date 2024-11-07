@@ -3,52 +3,33 @@
 const fs = require('fs');
 const _path = require('path');
 const _xml2js = require('xml2js');
+const { ParseArgs } = require('./lib/ParseArgs');
+const { bootstrap } = require('./lib/bootstrap');
 
-let _inputDir = '.';   // Directory with XML files
 let _outputDir = './build'; // Directory for generated HTML files
-const _libDir = _path.join(__dirname, 'lib'); // Directory with lib files
+const _parseArgs = new ParseArgs(process.argv);
+let _args = {};
 
-const _helpText = `Usage:
-    node-name                         Run with default settings in the current directory.
-    node-name -h                      Display this help message.
-    node-name <inputDir> <outputDir>  Specify input and output directories.`;
+const _libDir = _path.join(__dirname, 'lib'); // Directory with lib files
 
 init();
 
 function init() {
-    processArgs();
-    readFiles();
-}
-
-function processArgs() {
-    // Parse command-line arguments
-    const args = process.argv.slice(2);
-
-    if (args.length === 0) {
-        return;
-    } else if (args[0] === '-h') {
-        console.log(_helpText);
-        process.exit();
-    } else if (args.length === 2) {
-        _inputDir = _path.resolve(args[0]);
-        _outputDir = _path.resolve(args[1]);
-        console.log(`Using input directory: ${_inputDir}`);
-        console.log(`Using output directory: ${_outputDir}`);
-    } else {
-        console.log('Invalid usage. Use -h for help.');
-        console.log(_helpText);
-        process.exit();
+    _args = _parseArgs.parse();
+    if (_args.init === true) {
+        bootstrap(_path, _path.join(__dirname, 'xml'), _args.inputDir);
     }
+    readFiles();
 }
 
 function readFiles() {
     // Ensure the output directory exists
-    if (!fs.existsSync(_outputDir)) {
-        fs.mkdirSync(_outputDir);
+    if (!fs.existsSync(_args.outputDir)) {
+        fs.mkdirSync(_args.outputDir);
     }
 
     // Read all XML files in the input directory
-    fs.readdir(_inputDir, (err, files) => {
+    fs.readdir(_args.inputDir, (err, files) => {
         if (err) {
             console.error('Error reading input directory:', err);
             return;
@@ -56,7 +37,7 @@ function readFiles() {
 
         files.forEach(file => {
             if (_path.extname(file) === '.xml') {
-                const filePath = _path.join(_inputDir, file);
+                const filePath = _path.join(_args.inputDir, file);
                 fs.readFile(filePath, 'utf8', (err, data) => {
                     if (err) {
                         console.error('Error reading file:', file, err);
@@ -79,7 +60,7 @@ function readFiles() {
 
                         // Write the output HTML to a file
                         const outputFileName = _path.basename(file, '.xml') + '.html';
-                        const outputPath = _path.join(_outputDir, outputFileName);
+                        const outputPath = _path.join(_args.outputDir, outputFileName);
                         fs.writeFile(outputPath, outputHtml, err => {
                             if (err) {
                                 console.error('Error writing output file:', outputPath, err);
@@ -281,8 +262,8 @@ function processImgs(imgs) {
 // Copy dependent icons
 function copyImageFiles() {
     // Ensure the output directory exists
-    if (!fs.existsSync(_outputDir + "/img")) {
-        fs.mkdirSync(_outputDir + "/img");
+    if (!fs.existsSync(_args.outputDir + "/img")) {
+        fs.mkdirSync(_args.outputDir + "/img");
     }
 
     // List of image files to copy
@@ -290,7 +271,7 @@ function copyImageFiles() {
 
     imageFiles.forEach(fileName => {
         const sourcePath = _path.join(_libDir, fileName);
-        const destPath = _path.join(_outputDir + '/img', fileName);
+        const destPath = _path.join(_args.outputDir + '/img', fileName);
 
         fs.copyFile(sourcePath, destPath, err => {
             if (err) {

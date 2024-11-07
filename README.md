@@ -5,6 +5,10 @@ __This app allows the user to turn a formatted XML file into a static Linktree s
 
 - Run `npm i -g xml-to-linkpage` to install globally
 
+### Bootstrap
+
+- Run `xml-to-linkpage init` to bootstrap new project
+
 ## Usage
 
 - Open terminal to directory with xml file
