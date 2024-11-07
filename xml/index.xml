@@ -1,6 +1,6 @@
 <page>
     <title>Title Bar</title>
-    <handle>Handle</handle>
+    <handle>@Handle</handle>
     <links>
         <link>
             <text>Google</text>
@@ -12,7 +12,9 @@
         </link>
     </links>
     <styles>
-        <var name="--font-size-small">1.3em</var>
-        <var name="--font-size-large">2em</var>
+        <var name="--theme-background-main">#ffffff</var>
+        <var name="--theme-background-link-btn">#dddddd</var>
+        <var name="--theme-color-main">#000000</var>
+        <var name="--theme-color-link-btn">#000000</var>
     </styles>
 </page>

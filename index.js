@@ -129,10 +129,9 @@ ${_defaultCss}
     </span>
     <div id="header">
         <img type="image/png" src="./img/logo.png" height="100vh" alt="The logo for ${title}." />
-        <div>@${handle}</div>
+        <div>${handle}</div>
     </div>
-    <div id="link-container" class="prevent-select">
-        ${linksHtml}
+    <div id="link-container" class="prevent-select">${linksHtml}
     </div>
 </body>
 </html>
@@ -187,8 +186,9 @@ function navigateTo(event, url) {
         const text = link.text ? link.text[0] : '';
         const url = link.url ? link.url[0] : '';
         linksJs += `
-        document.getElementById('navto-${text.toLowerCase().replace(/\s+/, "")}').addEventListener('mouseup', (event) => navigateTo(event, "${url}"));
-        document.getElementById('copy-${text.toLowerCase().replace(/\s+/, "")}').addEventListener('mouseup', (event) => copyToClipboard(event, "${url}"));\n`;
+document.getElementById('navto-${text.toLowerCase().replace(/\s+/, "")}').addEventListener('mouseup', (event) => navigateTo(event, "${url}"));
+document.getElementById('copy-${text.toLowerCase().replace(/\s+/, "")}').addEventListener('mouseup', (event) => copyToClipboard(event, "${url}"));
+`;
     });
 
     return linksJs;
@@ -218,13 +218,10 @@ function processCssVars(styles) {
     styles.forEach(style => {
         const varName = style.$?.name;
         const varValue = style._;
-        console.log(style._);
         if (varName != null && varValue != null) {
             cssVars[varName] = varValue;
         }
     });
-
-    console.log(cssVars);
 
     return `:root {\n${Object.entries(cssVars).map(([key, value]) => `${key}: ${value};`).join('\n')}\n}`;
 }
