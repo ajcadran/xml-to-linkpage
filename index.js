@@ -6,29 +6,25 @@ const _xml2js = require('xml2js');
 const { bootstrap } = require('./lib/bootstrap');
 const { ParseArgs, imgTemplates } = require('./lib/util');
 
-const _parseArgs = new ParseArgs(process.argv);
-let _args = {};
-
-const _libDir = _path.join(__dirname, 'lib'); // Directory with lib files
-
 init();
 
 function init() {
-    _args = _parseArgs.parse();
-    if (_args.init === true) {
-        bootstrap(_path, _path.join(__dirname, 'xml'), _args.inputDir);
+    const parseArgs = new ParseArgs(process.argv);
+    let args = parseArgs.parse();
+    if (args.init === true) {
+        bootstrap(_path, _path.join(__dirname, 'xml'), args.inputDir);
     }
-    readFiles();
+    readFiles(args);
 }
 
-function readFiles() {
+function readFiles(args) {
     // Ensure the output directory exists
-    if (!fs.existsSync(_args.outputDir)) {
-        fs.mkdirSync(_args.outputDir);
+    if (!fs.existsSync(args.outputDir)) {
+        fs.mkdirSync(args.outputDir);
     }
 
     // Read all XML files in the input directory
-    fs.readdir(_args.inputDir, (err, files) => {
+    fs.readdir(args.inputDir, (err, files) => {
         if (err) {
             console.error('Error reading input directory:', err);
             return;
@@ -36,7 +32,7 @@ function readFiles() {
 
         files.forEach(file => {
             if (_path.extname(file) === '.xml') {
-                const filePath = _path.join(_args.inputDir, file);
+                const filePath = _path.join(args.inputDir, file);
                 fs.readFile(filePath, 'utf8', (err, data) => {
                     if (err) {
                         console.error('Error reading file:', file, err);
@@ -51,7 +47,7 @@ function readFiles() {
                             return;
                         }
 
-                        const [bgImgMain, bgImgLinkBtn] = processImgs(result?.page?.img?.[0]?.var);
+                        const [bgImgMain, bgImgLinkBtn] = processBgImages(result?.page?.img?.[0]?.var);
                         const cssVars = processCssVars(result?.page?.styles?.[0].var);
 
                         // Process the parsed finished HTML file
@@ -59,7 +55,7 @@ function readFiles() {
 
                         // Write the output HTML to a file
                         const outputFileName = _path.basename(file, '.xml') + '.html';
-                        const outputPath = _path.join(_args.outputDir, outputFileName);
+                        const outputPath = _path.join(args.outputDir, outputFileName);
                         fs.writeFile(outputPath, outputHtml, err => {
                             if (err) {
                                 console.error('Error writing output file:', outputPath, err);
@@ -69,9 +65,9 @@ function readFiles() {
                         });
                         
                         // Copy the default icons
-                        const disableDefaultIcons = result?.page?.$?.icons ?? 'true';
+                        const disableDefaultIcons = result?.page?.$?.defaultIcons ?? 'true';
                         if (disableDefaultIcons == 'true') {
-                            copyImageFiles();
+                            copyImageFilesToWorkingDir(args);
                         }
                     });
                 });
@@ -88,6 +84,9 @@ function processHtml(xmlData, cssVars, bgImgMain, bgImgLinkBtn) {
 
     let linksHtml = processLinkHtml(links);
     let linksJs = processLinkJs(links);
+
+    // Compile final CSS
+    _defaultCss.replace("")
 
     // Generate the final HTML
     return `
@@ -181,8 +180,8 @@ document.getElementById('copy-${text.toLowerCase().replace(/\s+/, "")}').addEven
     return linksJs;
 }
 
-function processCssVars(styles) {
-    if (styles == null) {
+function processCssVars(xmlStyles) {
+    if (xmlStyles == null) {
         return null;
     }
 
@@ -204,7 +203,7 @@ function processCssVars(styles) {
         '--logo-size': ''
     };
 
-    styles.forEach(style => {
+    xmlStyles.forEach(style => {
         const varName = style.$?.name;
         const varValue = style._;
         if (varName != null && varValue != null) {
@@ -215,26 +214,7 @@ function processCssVars(styles) {
     return `:root {\n${Object.entries(cssVars).map(([key, value]) => `${key}: ${value};`).join('\n')}\n}`;
 }
 
-// Create fresh template for image style classes
-const imgTemplates = () => {
-    const imgMainTemplate = `
-    html {
-        background-image: url('{img}');
-        background-repeat: {repeat};
-        background-size: {size};
-    }`;
-    
-        const imgLinkBtnTemplate = `
-    .link-btn {
-        background-image: url('{img}');
-        background-repeat: {repeat};
-        background-size: {size};
-    }`;
-
-    return [imgMainTemplate, imgLinkBtnTemplate];
-}
-
-function processImgs(imgs) {
+function processBgImages(imgs) {
     let bgImgMain = '';
     let bgImgLinkBtn = '';
 
@@ -266,18 +246,19 @@ function processImgs(imgs) {
 }
 
 // Copy dependent icons
-function copyImageFiles() {
+function copyImageFilesToWorkingDir(args) {
     // Ensure the output directory exists
-    if (!fs.existsSync(_args.outputDir + "/img")) {
-        fs.mkdirSync(_args.outputDir + "/img");
+    if (!fs.existsSync(args.outputDir + "/img")) {
+        fs.mkdirSync(args.outputDir + "/img");
     }
 
     // List of image files to copy
     const imageFiles = ['clipboard.png', 'copy.png'];
+    const libDir = _path.join(__dirname, 'lib');
 
     imageFiles.forEach(fileName => {
-        const sourcePath = _path.join(_libDir, fileName);
-        const destPath = _path.join(_args.outputDir + '/img', fileName);
+        const sourcePath = _path.join(libDir, fileName);
+        const destPath = _path.join(args.outputDir + '/img', fileName);
 
         fs.copyFile(sourcePath, destPath, err => {
             if (err) {
@@ -321,6 +302,8 @@ const _defaultCss = `
         width: 60px !important;
     }
 }
+
+{root-vars}
 
 /* General */
 html {
@@ -489,4 +472,5 @@ body {
         top: 0;
         opacity: 0;
     }
-}`;
+}
+`;
