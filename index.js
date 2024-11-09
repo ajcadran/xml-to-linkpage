@@ -3,8 +3,8 @@
 const fs = require('fs');
 const _path = require('path');
 const _xml2js = require('xml2js');
-const { ParseArgs } = require('./lib/ParseArgs');
 const { bootstrap } = require('./lib/bootstrap');
+const { ParseArgs, imgTemplates } = require('./lib/util');
 
 const _parseArgs = new ParseArgs(process.argv);
 let _args = {};
