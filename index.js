@@ -4,20 +4,25 @@ const fs = require('fs');
 const _path = require('path');
 const _xml2js = require('xml2js');
 const { bootstrap } = require('./lib/bootstrap');
-const { ParseArgs, imgTemplates } = require('./lib/util');
+const { ParseArgs, processCssVars, imgTemplates } = require('./lib/util');
 
 init();
 
 function init() {
+    // Parse cli args
     const parseArgs = new ParseArgs(process.argv);
     let args = parseArgs.parse();
+
+    // Bootstrap linkpage
     if (args.init === true) {
         bootstrap(_path, _path.join(__dirname, 'xml'), args.inputDir);
     }
-    readFiles(args);
+
+    // Run main logic
+    main(args);
 }
 
-function readFiles(args) {
+function main(args) {
     // Ensure the output directory exists
     if (!fs.existsSync(args.outputDir)) {
         fs.mkdirSync(args.outputDir);
@@ -32,51 +37,55 @@ function readFiles(args) {
 
         files.forEach(file => {
             if (_path.extname(file) === '.xml') {
-                const filePath = _path.join(args.inputDir, file);
-                fs.readFile(filePath, 'utf8', (err, data) => {
-                    if (err) {
-                        console.error('Error reading file:', file, err);
-                        return;
-                    }
-
-                    // Parse the XML content
-                    const parser = new _xml2js.Parser();
-                    parser.parseString(data, (err, result) => {
-                        if (err) {
-                            console.error('Error parsing XML:', file, err);
-                            return;
-                        }
-
-                        const [bgImgMain, bgImgLinkBtn] = processBgImages(result?.page?.img?.[0]?.var);
-                        const cssVars = processCssVars(result?.page?.styles?.[0].var);
-
-                        // Process the parsed finished HTML file
-                        const outputHtml = processHtml(result, cssVars, bgImgMain, bgImgLinkBtn);
-
-                        // Write the output HTML to a file
-                        const outputFileName = _path.basename(file, '.xml') + '.html';
-                        const outputPath = _path.join(args.outputDir, outputFileName);
-                        fs.writeFile(outputPath, outputHtml, err => {
-                            if (err) {
-                                console.error('Error writing output file:', outputPath, err);
-                            } else {
-                                console.log('Generated:', outputPath);
-                            }
-                        });
-                        
-                        // Copy the default icons
-                        const disableDefaultIcons = result?.page?.$?.defaultIcons ?? 'true';
-                        if (disableDefaultIcons == 'true') {
-                            copyImageFilesToWorkingDir(args);
-                        }
-                    });
-                });
+                processFile(args, file);
             }
         });
     });
 }
 
-function processHtml(xmlData, cssVars, bgImgMain, bgImgLinkBtn) {
+function processFile(args, file) {
+    const filePath = _path.join(args.inputDir, file);
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading file:', file, err);
+            return;
+        }
+
+        // Parse the XML content
+        const parser = new _xml2js.Parser();
+        parser.parseString(data, (err, result) => {
+            if (err) {
+                console.error('Error parsing XML:', file, err);
+                return;
+            }
+
+            const [bgImgMain, bgImgLinkBtn] = processBgImages(result?.page?.img?.[0]?.var);
+            const cssVars = processCssVars(result?.page?.styles?.[0].var);
+
+            // Process the parsed finished HTML file
+            const outputHtml = processHtml(result, cssVars, bgImgMain, bgImgLinkBtn);
+
+            // Write the output HTML to a file
+            const outputFileName = _path.basename(file, '.xml') + '.html';
+            const outputPath = _path.join(args.outputDir, outputFileName);
+            fs.writeFile(outputPath, outputHtml, err => {
+                if (err) {
+                    console.error('Error writing output file:', outputPath, err);
+                } else {
+                    console.log('Generated:', outputPath);
+                }
+            });
+
+            // Copy the default icons
+            const disableDefaultIcons = result?.page?.$?.defaultIcons ?? 'true';
+            if (disableDefaultIcons == 'true') {
+                copyImageFilesToWorkingDir(args);
+            }
+        });
+    });
+}
+
+function processHtml(xmlData, rootVars, bgImgMain, bgImgLinkBtn) {
     const page = xmlData.page;
     const title = page.title ? page.title[0] : '';
     const handle = page.handle ? page.handle[0] : '';
@@ -86,20 +95,14 @@ function processHtml(xmlData, cssVars, bgImgMain, bgImgLinkBtn) {
     let linksJs = processLinkJs(links);
 
     // Compile final CSS
-    _defaultCss.replace("")
+    const rules = _defaultCss.replace("{root-vars}", rootVars).replace("{bg-img-main}", bgImgMain).replace("{bg-img-link-btn}", bgImgLinkBtn);
 
     // Generate the final HTML
-    return `
-<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html>
 <head>
     <title>${title}</title>
-    <style>
-${bgImgMain}
-${bgImgLinkBtn}
-${cssVars}
-${_defaultCss}
-    </style>
+    <style>${rules}</style>
     <link rel="icon" type="image/x-icon" href="./img/favicon.png">
     <script type="module" defer>${linksJs}</script>
 </head>
@@ -180,40 +183,6 @@ document.getElementById('copy-${text.toLowerCase().replace(/\s+/, "")}').addEven
     return linksJs;
 }
 
-function processCssVars(xmlStyles) {
-    if (xmlStyles == null) {
-        return null;
-    }
-
-    let cssVars = {
-        '--font-size-small': '1.3em',
-        '--font-size-large': '2em',
-        '--spacing-xs': '4px',
-        '--spacing-small': '12px',
-        '--spacing-medium': '16px',
-        '--spacing-large': '24px',
-        '--spacing-xl': '10vh',
-        '--font-family-primary': 'Inter, sans-serif',
-        '--theme-background-main': '#faddf2',
-        '--theme-background-link-btn': '#f4aed1',
-        '--theme-copy-btn-hover': '#ffffff3b',
-        '--theme-color-main': '#000000',
-        '--theme-color-link-btn': '#000000',
-        '--copy-btn-size': '20px',
-        '--logo-size': ''
-    };
-
-    xmlStyles.forEach(style => {
-        const varName = style.$?.name;
-        const varValue = style._;
-        if (varName != null && varValue != null) {
-            cssVars[varName] = varValue;
-        }
-    });
-
-    return `:root {\n${Object.entries(cssVars).map(([key, value]) => `${key}: ${value};`).join('\n')}\n}`;
-}
-
 function processBgImages(imgs) {
     let bgImgMain = '';
     let bgImgLinkBtn = '';
@@ -224,7 +193,7 @@ function processBgImages(imgs) {
 
     imgs.forEach(img => {
         // Get fresh templates
-        const [imgMainTemplate, imgLinkBtnTemplate] = imgTemplates();
+        const [imgMainRules, imgLinkBtnRules] = imgTemplates();
 
         // Strip all metadata
         let imgName = img.$?.name;
@@ -235,10 +204,10 @@ function processBgImages(imgs) {
         // Format correct values
         if (imgName == '--background-img-main' && imgValue != null) {
             imgSize ??= 'cover';
-            bgImgMain = imgMainTemplate.replace('{img}', imgValue).replace('{repeat}', imgRepeat).replace('{size}', imgSize);
+            bgImgMain = imgMainRules.replace('{img}', imgValue).replace('{repeat}', imgRepeat).replace('{size}', imgSize);
         } else if (imgName == '--background-img-link-btn' && imgValue != null) {
             imgSize ??= '100% 100%';
-            bgImgLinkBtn = imgLinkBtnTemplate.replace('{img}', imgValue).replace('{repeat}', imgRepeat).replace('{size}', imgSize);
+            bgImgLinkBtn = imgLinkBtnRules.replace('{img}', imgValue).replace('{repeat}', imgRepeat).replace('{size}', imgSize);
         }
     });
 
@@ -308,6 +277,7 @@ const _defaultCss = `
 /* General */
 html {
     background-color: var(--theme-background-main);
+    {bg-img-main}
 }
 
 a {
@@ -363,6 +333,7 @@ body {
     border-radius: 8px;
     box-shadow: 0 0 10px #00000036;
     transition: 0.3s;
+    {bg-img-link-btn}
 }
 
 .link-btn:hover {
