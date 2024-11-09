@@ -6,7 +6,6 @@ const _xml2js = require('xml2js');
 const { ParseArgs } = require('./lib/ParseArgs');
 const { bootstrap } = require('./lib/bootstrap');
 
-let _outputDir = './build'; // Directory for generated HTML files
 const _parseArgs = new ParseArgs(process.argv);
 let _args = {};
 
@@ -107,11 +106,13 @@ ${_defaultCss}
 </head>
 <body>
     <span id="snackbar">
-        <img type="image/png" src="./img/clipboard.png" height="20px" />
-        Copied to Clipboard
+        <img class="snackbar-img" src="./img/clipboard.png" />
+        <div class="snackbar-text">
+            Copied to Clipboard
+        </div>
     </span>
     <div id="header">
-        <img type="image/png" src="./img/logo.png" height="100vh" alt="The logo for ${title}." />
+        <img class="header-logo" src="./img/logo.png" alt="The logo for ${title}." />
         <div>${handle}</div>
     </div>
     <div id="link-container" class="prevent-select">${linksHtml}
@@ -124,13 +125,16 @@ ${_defaultCss}
 function processLinkHtml(links) {
     let linksHtml = '';
 
-    links.forEach(link => {
+    links.forEach((link, index) => {
         const text = link.text ? link.text[0] : '';
+        const id = text.toLowerCase().replace(/\s+/, "") || index;
         linksHtml += `
-        <div id="navto-${text.toLowerCase().replace(/\s+/, "")}" class="link-btn">
-            ${text}
-            <div id="copy-${text.toLowerCase().replace(/\s+/, "")}" class="copy-btn">
-                <img type="image/png" src="./img/copy.png" width="16px" />
+        <div id="navto-${id}" class="link-btn" title="${link?.url}">
+            <div class="link-text">
+                ${text}
+            </div>
+            <div id="copy-${id}" class="copy-btn">
+                <img class="copy-btn-img" src="./img/copy.png" />
             </div>
         </div>`;
     });
@@ -196,6 +200,8 @@ function processCssVars(styles) {
         '--theme-copy-btn-hover': '#ffffff3b',
         '--theme-color-main': '#000000',
         '--theme-color-link-btn': '#000000',
+        '--copy-btn-size': '20px',
+        '--logo-size': ''
     };
 
     styles.forEach(style => {
@@ -284,6 +290,38 @@ function copyImageFiles() {
 }
 
 const _defaultCss = `
+@media only screen and (max-width: 1000px) {
+    :root {
+        --font-size-small: 4em !important;
+        --font-size-large: 6em !important;
+    }
+
+    #header, #link-container {
+        width: 90% !important;
+    }
+
+    .header-logo {
+        height: 200px !important;
+    }
+
+    #snackbar {
+        left: 25% !important;
+        width: 75% !important;
+    }
+
+    .snackbar-img {
+        height: 60px !important;
+    }
+
+    .link-btn {
+        margin-top: calc(var(--spacing-medium) * 2) !important;
+    }
+
+    .copy-btn-img {
+        width: 60px !important;
+    }
+}
+
 /* General */
 html {
     background-color: var(--theme-background-main);
@@ -294,6 +332,10 @@ a {
     color: black;
 }
 
+body {
+    justify-content: center;
+}
+
 #header {
     text-align: center;
     width: 35%;
@@ -302,6 +344,10 @@ a {
     color: var(--theme-color-main);
     font-family: var(--font-family-primary);
     font-size: var(--font-size-large);
+}
+
+.header-logo {
+    height: 100px;
 }
 
 /* Utilities */
@@ -329,9 +375,6 @@ a {
     margin-top: var(--spacing-medium);
     padding: var(--spacing-medium);
     text-align: center;
-    font-weight: 400;
-    font-family: var(--font-family-primary);
-    font-size: var(--font-size-small);
     color: var(--theme-color-link-btn);
     background-color: var(--theme-background-link-btn);
     border-radius: 8px;
@@ -344,14 +387,24 @@ a {
     scale: 1.01;
 }
 
-.copy-btn {
-    float: right;
+.link-text {
+    display: inline;
+    font-weight: 400;
+    font-family: var(--font-family-primary);
+    font-size: var(--font-size-small);
 }
 
-.copy-btn img {
+.copy-btn-img {
+    display: inline;
+    width: var(--font-size-small);
     padding: var(--spacing-xs);
-    border-radius: 8px;
+    margin: calc(var(--spacing-xs) * -1);
+    border-radius: 4px;
     transition: 0.3s;
+}
+
+.copy-btn {
+    float: right;
 }
 
 .copy-btn img:hover {
@@ -365,13 +418,23 @@ a {
     left: 50%;
     min-width: 250px;
     margin-left: -125px;
-    padding: 16px;
+    padding: var(--spacing-medium);
     text-align: center;
-    font-family: var(--font-family-primary);
     border-radius: 2px;
     background-color: var(--theme-background-link-btn);
     z-index: 1;
     visibility: hidden;
+}
+
+.snackbar-img {
+    display: inline;
+    height: var(--font-size-small);
+}
+
+.snackbar-text {
+    display: inline;
+    font-family: var(--font-family-primary);
+    font-size: var(--font-size-small);
 }
 
 #snackbar.show {
