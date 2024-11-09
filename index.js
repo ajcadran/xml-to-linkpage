@@ -4,7 +4,7 @@ const fs = require('fs');
 const _path = require('path');
 const _xml2js = require('xml2js');
 const { bootstrap } = require('./lib/bootstrap');
-const { ParseArgs, processCssVars, imgTemplates } = require('./lib/util');
+const { ParseArgs, processCssVars, imgTemplates, cssTemplate } = require('./lib/util');
 
 init();
 
@@ -95,14 +95,16 @@ function processHtml(xmlData, rootVars, bgImgMain, bgImgLinkBtn) {
     let linksJs = processLinkJs(links);
 
     // Compile final CSS
-    const rules = _defaultCss.replace("{root-vars}", rootVars).replace("{bg-img-main}", bgImgMain).replace("{bg-img-link-btn}", bgImgLinkBtn);
+    const rules = cssTemplate.replace("{root-vars}", rootVars).replace("{bg-img-main}", bgImgMain).replace("{bg-img-link-btn}", bgImgLinkBtn);
 
     // Generate the final HTML
     return `<!DOCTYPE html>
 <html>
 <head>
     <title>${title}</title>
-    <style>${rules}</style>
+    <style>
+${rules}
+    </style>
     <link rel="icon" type="image/x-icon" href="./img/favicon.png">
     <script type="module" defer>${linksJs}</script>
 </head>
@@ -238,210 +240,3 @@ function copyImageFilesToWorkingDir(args) {
         });
     });
 }
-
-const _defaultCss = `
-@media only screen and (max-width: 1000px) {
-    :root {
-        --font-size-small: 4em !important;
-        --font-size-large: 6em !important;
-    }
-
-    #header, #link-container {
-        width: 90% !important;
-    }
-
-    .header-logo {
-        height: 200px !important;
-    }
-
-    #snackbar {
-        left: 25% !important;
-        width: 75% !important;
-    }
-
-    .snackbar-img {
-        height: 60px !important;
-    }
-
-    .link-btn {
-        margin-top: calc(var(--spacing-medium) * 2) !important;
-    }
-
-    .copy-btn-img {
-        width: 60px !important;
-    }
-}
-
-{root-vars}
-
-/* General */
-html {
-    background-color: var(--theme-background-main);
-    {bg-img-main}
-}
-
-a {
-    text-decoration: none;
-    color: black;
-}
-
-body {
-    justify-content: center;
-}
-
-#header {
-    text-align: center;
-    width: 35%;
-    margin: auto;
-    margin-top: 10vh;
-    color: var(--theme-color-main);
-    font-family: var(--font-family-primary);
-    font-size: var(--font-size-large);
-}
-
-.header-logo {
-    height: 100px;
-}
-
-/* Utilities */
-.prevent-select {
-    -webkit-user-select: none;
-    /* Safari */
-    -ms-user-select: none;
-    /* IE 10 and IE 11 */
-    user-select: none;
-    /* Standard syntax */
-}
-
-/* Links */
-#link-container {
-    width: 35%;
-    margin: auto;
-    margin-top: 1vh;
-    padding: var(--spacing-large);
-    border-radius: 24px;
-}
-
-.link-btn {
-    justify-items: center;
-    cursor: pointer;
-    margin-top: var(--spacing-medium);
-    padding: var(--spacing-medium);
-    text-align: center;
-    color: var(--theme-color-link-btn);
-    background-color: var(--theme-background-link-btn);
-    border-radius: 8px;
-    box-shadow: 0 0 10px #00000036;
-    transition: 0.3s;
-    {bg-img-link-btn}
-}
-
-.link-btn:hover {
-    box-shadow: 0 0 14px #0000006c;
-    scale: 1.01;
-}
-
-.link-text {
-    display: inline;
-    font-weight: 400;
-    font-family: var(--font-family-primary);
-    font-size: var(--font-size-small);
-}
-
-.copy-btn-img {
-    display: inline;
-    width: var(--font-size-small);
-    padding: var(--spacing-xs);
-    margin: calc(var(--spacing-xs) * -1);
-    border-radius: 4px;
-    transition: 0.3s;
-}
-
-.copy-btn {
-    float: right;
-}
-
-.copy-btn img:hover {
-    background-color: var(--theme-copy-btn-hover);
-}
-
-/* Snackbar */
-#snackbar {
-    position: fixed;
-    top: 30px;
-    left: 50%;
-    min-width: 250px;
-    margin-left: -125px;
-    padding: var(--spacing-medium);
-    text-align: center;
-    border-radius: 2px;
-    background-color: var(--theme-background-link-btn);
-    z-index: 1;
-    visibility: hidden;
-}
-
-.snackbar-img {
-    display: inline;
-    height: var(--font-size-small);
-}
-
-.snackbar-text {
-    display: inline;
-    font-family: var(--font-family-primary);
-    font-size: var(--font-size-small);
-}
-
-#snackbar.show {
-    visibility: visible;
-    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
-    animation: fadein 0.5s, fadeout 0.5s 2.5s;
-}
-
-@-webkit-keyframes fadein {
-    from {
-        top: 0;
-        opacity: 0;
-    }
-
-    to {
-        top: 30px;
-        opacity: 1;
-    }
-}
-
-@keyframes fadein {
-    from {
-        top: 0;
-        opacity: 0;
-    }
-
-    to {
-        top: 30px;
-        opacity: 1;
-    }
-}
-
-@-webkit-keyframes fadeout {
-    from {
-        top: 30px;
-        opacity: 1;
-    }
-
-    to {
-        top: 0;
-        opacity: 0;
-    }
-}
-
-@keyframes fadeout {
-    from {
-        top: 30px;
-        opacity: 1;
-    }
-
-    to {
-        top: 0;
-        opacity: 0;
-    }
-}
-`;
