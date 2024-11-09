@@ -47,14 +47,22 @@ __This app allows the user to turn a formatted XML file into a static Linktree s
 </page>
 ```
 
+### Options
+
+Add `defaultIcons="false"` to `page` if you do not want to use the default icons included in the package. Make sure to supply your own image files instead.
+
+```xml
+<page defaultIcons="false"></page>
+```
+
 ### Background Images
 
 __Create background images by using the img tag__
 
 ```xml
 <img>
-    <var name="--background-img-main">./img/packground-img-main.jpg</var>
-    <var name="--background-img-link-btn" repeat="no-repeat" size="contain">./img/packground-img-main.jpg</var>
+    <var name="--background-img-main">./img/background-img-main.jpg</var>
+    <var name="--background-img-link-btn" repeat="no-repeat" size="contain">./img/background-img-main.jpg</var>
 </img>
 ```
 
