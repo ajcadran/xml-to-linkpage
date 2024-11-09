@@ -66,15 +66,7 @@ function processFile(args, file) {
             const outputHtml = processHtml(result, cssVars, bgImgMain, bgImgLinkBtn);
 
             // Write the output HTML to a file
-            const outputFileName = _path.basename(file, '.xml') + '.html';
-            const outputPath = _path.join(args.outputDir, outputFileName);
-            fs.writeFile(outputPath, outputHtml, err => {
-                if (err) {
-                    console.error('Error writing output file:', outputPath, err);
-                } else {
-                    console.log('Generated:', outputPath);
-                }
-            });
+            writeHtml(file, args, outputHtml);
 
             // Copy the default icons
             const disableDefaultIcons = result?.page?.$?.defaultIcons ?? 'true';
@@ -214,6 +206,18 @@ function processBgImages(imgs) {
     });
 
     return [bgImgMain, bgImgLinkBtn];
+}
+
+function writeHtml(file, args, outputHtml) {
+    const outputFileName = _path.basename(file, '.xml') + '.html';
+    const outputPath = _path.join(args.outputDir, outputFileName);
+    fs.writeFile(outputPath, outputHtml, err => {
+        if (err) {
+            console.error('Error writing output file:', outputPath, err);
+        } else {
+            console.log('Generated:', outputPath);
+        }
+    });
 }
 
 // Copy dependent icons
