@@ -4,6 +4,8 @@
     <img>
         <var name="--background-img-main">./img/img.png</var>
         <var name="--background-img-link-btn">./img/img.png</var>
+        <var name="--img-copy">./img/copy.png</var>
+        <var name="--img-clipboard">./img/clipboard.png</var>
     </img>
     <links>
         <link>

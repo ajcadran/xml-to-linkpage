@@ -4,7 +4,7 @@ const fs = require('fs');
 const _path = require('path');
 const _xml2js = require('xml2js');
 const { bootstrap } = require('./lib/bootstrap');
-const { ParseArgs, processCssVars, imgTemplates, cssTemplate } = require('./lib/util');
+const { ParseArgs, processImages, processStyles, imgTemplates, cssTemplate } = require('./lib/util');
 
 init();
 
@@ -59,14 +59,14 @@ function processFile(args, file) {
                 return;
             }
 
-            const [bgImgMain, bgImgLinkBtn] = processBgImages(result?.page?.img?.[0]?.var);
-            const cssVars = processCssVars(result?.page?.styles?.[0].var);
+            const images = processImages(result?.page?.img?.[0]?.var);
+            const styles = processStyles(result?.page?.styles?.[0].var);
 
             // Process the parsed finished HTML file
-            const outputHtml = processHtml(result, cssVars, bgImgMain, bgImgLinkBtn);
+            const outputHtml = processHtml(result, styles, images);
 
             // Write the output HTML to a file
-            writeHtml(file, args, outputHtml);
+            writeHtml(file, args.outputDir, outputHtml);
 
             // Copy the default icons
             const disableDefaultIcons = result?.page?.$?.defaultIcons ?? 'true';
@@ -77,17 +77,17 @@ function processFile(args, file) {
     });
 }
 
-function processHtml(xmlData, rootVars, bgImgMain, bgImgLinkBtn) {
+function processHtml(xmlData, rootVars, images) {
     const page = xmlData.page;
     const title = page.title ? page.title[0] : '';
     const handle = page.handle ? page.handle[0] : '';
     const links = page.links && page.links[0].link ? page.links[0].link : [];
 
-    let linksHtml = processLinkHtml(links);
+    let linksHtml = processLinkHtml(links, images.imgCopy);
     let linksJs = processLinkJs(links);
 
     // Compile final CSS
-    const rules = cssTemplate.replace("{root-vars}", rootVars).replace("{bg-img-main}", bgImgMain).replace("{bg-img-link-btn}", bgImgLinkBtn);
+    const rules = cssTemplate.replace("{root-vars}", rootVars).replace("{bg-img-main}", images.bgImgMain).replace("{bg-img-link-btn}", images.bgImgLinkBtn);
 
     // Generate the final HTML
     return `<!DOCTYPE html>
@@ -102,7 +102,7 @@ ${rules}
 </head>
 <body>
     <span id="snackbar">
-        <img class="snackbar-img" src="./img/clipboard.png" />
+        <img class="snackbar-img" src="${images.imgClipboard}" />
         <div class="snackbar-text">
             Copied to Clipboard
         </div>
@@ -118,7 +118,7 @@ ${rules}
 `;
 }
 
-function processLinkHtml(links) {
+function processLinkHtml(links, imgLoc) {
     let linksHtml = '';
 
     links.forEach((link, index) => {
@@ -130,7 +130,7 @@ function processLinkHtml(links) {
                 ${text}
             </div>
             <div id="copy-${id}" class="copy-btn">
-                <img class="copy-btn-img" src="./img/copy.png" />
+                <img class="copy-btn-img" src="${imgLoc}" />
             </div>
         </div>`;
     });
@@ -177,41 +177,12 @@ document.getElementById('copy-${text.toLowerCase().replace(/\s+/, "")}').addEven
     return linksJs;
 }
 
-function processBgImages(imgs) {
-    let bgImgMain = '';
-    let bgImgLinkBtn = '';
 
-    if (imgs == null) {
-        return [bgImgMain, bgImgLinkBtn];
-    }
 
-    imgs.forEach(img => {
-        // Get fresh templates
-        const [imgMainRules, imgLinkBtnRules] = imgTemplates();
-
-        // Strip all metadata
-        let imgName = img.$?.name;
-        let imgValue = img._;
-        let imgRepeat = img.$?.repeat ?? 'no-repeat';
-        let imgSize = img.$?.size;
-
-        // Format correct values
-        if (imgName == '--background-img-main' && imgValue != null) {
-            imgSize ??= 'cover';
-            bgImgMain = imgMainRules.replace('{img}', imgValue).replace('{repeat}', imgRepeat).replace('{size}', imgSize);
-        } else if (imgName == '--background-img-link-btn' && imgValue != null) {
-            imgSize ??= '100% 100%';
-            bgImgLinkBtn = imgLinkBtnRules.replace('{img}', imgValue).replace('{repeat}', imgRepeat).replace('{size}', imgSize);
-        }
-    });
-
-    return [bgImgMain, bgImgLinkBtn];
-}
-
-function writeHtml(file, args, outputHtml) {
+function writeHtml(file, outDir, outHtml) {
     const outputFileName = _path.basename(file, '.xml') + '.html';
-    const outputPath = _path.join(args.outputDir, outputFileName);
-    fs.writeFile(outputPath, outputHtml, err => {
+    const outputPath = _path.join(outDir, outputFileName);
+    fs.writeFile(outputPath, outHtml, err => {
         if (err) {
             console.error('Error writing output file:', outputPath, err);
         } else {

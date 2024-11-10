@@ -63,6 +63,8 @@ __Create background images by using the img tag__
 <img>
     <var name="--background-img-main">./img/background-img-main.jpg</var>
     <var name="--background-img-link-btn" repeat="no-repeat" size="contain">./img/background-img-main.jpg</var>
+    <var name="--img-copy">./img/copy.png</var>
+    <var name="--img-clipboard">./img/clipboard.png</var>
 </img>
 ```
 
