@@ -4,7 +4,7 @@ const fs = require('fs');
 const _path = require('path');
 const _xml2js = require('xml2js');
 const { bootstrap } = require('./lib/bootstrap');
-const { ParseArgs, processImages, processStyles, imgTemplates, cssTemplate } = require('./lib/util');
+const { ParseArgs, processImages, processStyles, cssTemplate } = require('./lib/util');
 
 init();
 
@@ -59,11 +59,8 @@ function processFile(args, file) {
                 return;
             }
 
-            const images = processImages(result?.page?.img?.[0]?.var);
-            const styles = processStyles(result?.page?.styles?.[0].var);
-
             // Process the parsed finished HTML file
-            const outputHtml = processHtml(result, styles, images);
+            const outputHtml = processHtml(result);
 
             // Write the output HTML to a file
             writeHtml(file, args.outputDir, outputHtml);
@@ -71,20 +68,22 @@ function processFile(args, file) {
             // Copy the default icons
             const disableDefaultIcons = result?.page?.$?.defaultIcons ?? 'true';
             if (disableDefaultIcons == 'true') {
-                copyImageFilesToWorkingDir(args);
+                copyImageFiles(args.outputDir);
             }
         });
     });
 }
 
-function processHtml(xmlData, rootVars, images) {
+function processHtml(xmlData) {
     const page = xmlData.page;
     const title = page.title ? page.title[0] : '';
     const handle = page.handle ? page.handle[0] : '';
     const links = page.links && page.links[0].link ? page.links[0].link : [];
 
-    let linksHtml = processLinkHtml(links, images.imgCopy);
-    let linksJs = processLinkJs(links);
+    const images = processImages(page?.img?.[0]?.var);
+    const rootVars = processStyles(page?.styles?.[0].var);
+    const linksHtml = processLinkHtml(links, images.imgCopy);
+    const linksJs = processLinkJs(links);
 
     // Compile final CSS
     const rules = cssTemplate.replace("{root-vars}", rootVars).replace("{bg-img-main}", images.bgImgMain).replace("{bg-img-link-btn}", images.bgImgLinkBtn);
@@ -166,18 +165,17 @@ function navigateTo(event, url) {
 }`;
 
     links.forEach(link => {
-        const text = link.text ? link.text[0] : '';
+        // Text toLower and stripped of whitespace
+        const text = link.text ? link.text[0].toLowerCase().replace(/\s+/, "") : '';
         const url = link.url ? link.url[0] : '';
         linksJs += `
-document.getElementById('navto-${text.toLowerCase().replace(/\s+/, "")}').addEventListener('mouseup', (event) => navigateTo(event, "${url}"));
-document.getElementById('copy-${text.toLowerCase().replace(/\s+/, "")}').addEventListener('mouseup', (event) => copyToClipboard(event, "${url}"));
+document.getElementById('navto-${text}').addEventListener('mouseup', (event) => navigateTo(event, "${url}"));
+document.getElementById('copy-${text}').addEventListener('mouseup', (event) => copyToClipboard(event, "${url}"));
 `;
     });
 
     return linksJs;
 }
-
-
 
 function writeHtml(file, outDir, outHtml) {
     const outputFileName = _path.basename(file, '.xml') + '.html';
@@ -192,10 +190,10 @@ function writeHtml(file, outDir, outHtml) {
 }
 
 // Copy dependent icons
-function copyImageFilesToWorkingDir(args) {
+function copyImageFiles(outDir) {
     // Ensure the output directory exists
-    if (!fs.existsSync(args.outputDir + "/img")) {
-        fs.mkdirSync(args.outputDir + "/img");
+    if (!fs.existsSync(outDir + "/img")) {
+        fs.mkdirSync(outDir + "/img");
     }
 
     // List of image files to copy
@@ -204,7 +202,7 @@ function copyImageFilesToWorkingDir(args) {
 
     imageFiles.forEach(fileName => {
         const sourcePath = _path.join(libDir, fileName);
-        const destPath = _path.join(args.outputDir + '/img', fileName);
+        const destPath = _path.join(outDir + '/img', fileName);
 
         fs.copyFile(sourcePath, destPath, err => {
             if (err) {
