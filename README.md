@@ -90,6 +90,8 @@ __Create background images by using the img tag__
 <var name="--spacing-large">24px</var>
 <var name="--spacing-xl">10vh</var>
 <var name="--font-family-primary">Inter, sans-serif</var>
+<var name="--font-weight-header">400</var>
+<var name="--font-weight-link">400</var>
 <var name="--theme-background-main">#ffffff</var>
 <var name="--theme-background-link-btn">#dddddd</var>
 <var name="--theme-copy-btn-hover">#ffffff3b</var>
