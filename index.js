@@ -120,11 +120,14 @@ ${rules}
 function processLinkHtml(links, imgLoc) {
     let linksHtml = '';
 
-    links.forEach((link, index) => {
-        const text = link.text ? link.text[0] : '';
-        const id = text.toLowerCase().replace(/\s+/, "") || index;
-        linksHtml += `
-        <div id="navto-${id}" class="link-btn" title="${link?.url}">
+    links.forEach(link => {
+        const text = link?._ ? link._ : '';
+        const url = link.$?.url ? link.$.url : '';
+        const id = text.toLowerCase().replace(/\s+/, "");
+
+        if (text.trim() !== "" && url.trim() !== "") {
+            linksHtml += `
+        <div id="navto-${id}" class="link-btn" title="${url}">
             <div class="link-text">
                 ${text}
             </div>
@@ -132,6 +135,7 @@ function processLinkHtml(links, imgLoc) {
                 <img class="copy-btn-img" src="${imgLoc}" />
             </div>
         </div>`;
+        }
     });
 
     return linksHtml;
@@ -165,13 +169,15 @@ function navigateTo(event, url) {
 }`;
 
     links.forEach(link => {
-        // Text toLower and stripped of whitespace
-        const text = link.text ? link.text[0].toLowerCase().replace(/\s+/, "") : '';
-        const url = link.url ? link.url[0] : '';
-        linksJs += `
-document.getElementById('navto-${text}').addEventListener('mouseup', (event) => navigateTo(event, "${url}"));
-document.getElementById('copy-${text}').addEventListener('mouseup', (event) => copyToClipboard(event, "${url}"));
+        const id = link._ ? link._.toLowerCase().replace(/\s+/, "") : '';
+        const url = link.$?.url ? link.$.url : '';
+        
+        if (id.trim() !== "" && url.trim() !== "") {
+            linksJs += `
+document.getElementById('navto-${id}').addEventListener('mouseup', (event) => navigateTo(event, "${url}"));
+document.getElementById('copy-${id}').addEventListener('mouseup', (event) => copyToClipboard(event, "${url}"));
 `;
+        }
     });
 
     return linksJs;

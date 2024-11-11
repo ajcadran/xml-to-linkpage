@@ -8,14 +8,8 @@
         <var name="--img-clipboard">./img/clipboard.png</var>
     </img>
     <links>
-        <link>
-            <text>Google</text>
-            <url>https://google.com</url>
-        </link>
-        <link>
-            <text>Youtube</text>
-            <url>https://Youtube.com</url>
-        </link>
+        <link url="https://google.com">Google</link>
+        <link url="https://Youtube.com">Youtube</link>
     </links>
     <styles>
         <var name="--theme-background-main">#ffffff</var>

@@ -29,14 +29,8 @@ __This app allows the user to turn a formatted XML file into a static Linktree s
     <title>Title Bar</title>
     <handle>Handle</handle>
     <links>
-        <link>
-            <text>Google</text>
-            <url>https://google.com</url>
-        </link>
-        <link>
-            <text>Youtube</text>
-            <url>https://Youtube.com</url>
-        </link>
+        <link url="https://google.com">Google</link>
+        <link url="https://Youtube.com">Youtube</link>
     </links>
     <styles>
         <var name="--theme-background-main">#ffffff</var>
