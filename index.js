@@ -14,7 +14,7 @@ function init() {
     let args = parseArgs.parse();
 
     // Bootstrap linkpage
-    if (args.init === true) {
+    if (args.bootstrap === true) {
         bootstrap(_path, _path.join(__dirname, 'xml'), args.inputDir);
     }
 
