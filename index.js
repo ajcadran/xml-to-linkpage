@@ -4,7 +4,7 @@ const fs = require('fs');
 const _path = require('path');
 const _xml2js = require('xml2js');
 const { bootstrap } = require('./lib/bootstrap');
-const { ParseArgs, processImages, processStyles, cssTemplate } = require('./lib/util');
+const { ParseArgs, processImages, processStyles, cssTemplate, getShapeValue } = require('./lib/util');
 
 init();
 
@@ -123,11 +123,12 @@ function processLinkHtml(links, imgLoc) {
     links.forEach(link => {
         const text = link?._ ? link._ : '';
         const url = link.$?.url ? link.$.url : '';
+        const shapeValue = link.$?.shape ? getShapeValue(link.$.shape) : getShapeValue("squircle");
         const id = text.toLowerCase().replace(/\s+/, "");
 
         if (text.trim() !== "" && url.trim() !== "") {
             linksHtml += `
-        <div id="navto-${id}" class="link-btn" title="${url}">
+        <div id="navto-${id}" class="link-btn" style="border-radius:${shapeValue}px" title="${url}">
             <div class="link-text">
                 ${text}
             </div>
