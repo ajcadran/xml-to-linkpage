@@ -1,5 +1,5 @@
 
-__This app allows the user to turn a formatted XML file into a static Linktree style webpage__
+__This app turns a formatted XML file into a static Linktree-style webpage__
 
 ## Install
 
@@ -20,7 +20,7 @@ __This app allows the user to turn a formatted XML file into a static Linktree s
 ## CLI Options
 
 - `xml-to-linkpage -h` to display help message
-- `xml-to-linkpage <input-dir> <output-dir>` to use directories other than the current directory
+- `xml-to-linkpage <input-dir> <output-dir>` to specify input/output directories
 
 ## Exmaple XML
 
@@ -43,7 +43,7 @@ __This app allows the user to turn a formatted XML file into a static Linktree s
 
 ### Options
 
-Add `defaultIcons="false"` to `page` if you do not want to use the default icons included in the package. Make sure to supply your own image files instead.
+Add `defaultIcons="false"` to `<page>` to disable default icons. Make sure to supply your own image files instead.
 
 ```xml
 <page defaultIcons="false"></page>
